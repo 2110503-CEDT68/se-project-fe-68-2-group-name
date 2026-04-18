@@ -1,4 +1,5 @@
-export default async function userLogin(userEmail: string, usePassword: string) {
+
+export default async function userLogin(userEmail: string, userPassword: string) {
     const response = await fetch("https://swdevprac-project-backend.vercel.app/api/v1/auth/login", {
         method: "POST",
         headers: {
@@ -6,7 +7,7 @@ export default async function userLogin(userEmail: string, usePassword: string) 
         },
         body: JSON.stringify({
             email: userEmail,
-            password: usePassword,
+            password: userPassword,
         }),
     });
 
@@ -16,12 +17,11 @@ export default async function userLogin(userEmail: string, usePassword: string) 
 
     const json = await response.json();
 
-    // Extract _id from JWT payload
     const payload = JSON.parse(atob(json.token.split(".")[1]));
 
     return {
         ...json,
-        id: payload.id,    // NextAuth requires "id" field on User type
-        _id: payload.id,   // keep _id for your session usage
+        id: payload.id,
+        _id: payload.id,
     };
 }

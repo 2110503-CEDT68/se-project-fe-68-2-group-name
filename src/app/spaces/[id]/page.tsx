@@ -3,6 +3,7 @@ import BookingForm from "@/components/BookingForm";
 import getCoworkingById from "@/libs/getCoworkingById";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/authOptions";
+import CommentSection from "@/components/CommentSection";
 
 export default async function ReservePage({
   params,
@@ -39,6 +40,11 @@ export default async function ReservePage({
 
         <BookingForm
           pricePerHour={pricePerHour}
+          spaceId={id}
+          token={token}
+        />
+
+        <CommentSection
           spaceId={id}
           token={token}
         />

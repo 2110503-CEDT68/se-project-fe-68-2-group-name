@@ -1,4 +1,4 @@
-export default async function getCoworkingById(id: string) {
+export default async function getCommentsByCoworking(id: string) {
     const response = await fetch(
         `https://swdevprac-project-backend.vercel.app/api/v1/coworkingspaces/${id}/comments`,
         {
