@@ -7,7 +7,7 @@ export default async function SpacesPage() {
   return (
     <main className="bg-[#f5f7fb] min-h-screen">
       <section className="max-w-6xl mx-auto px-6 py-12">
-        <div className="rounded-xl border border-gray-200 bg-white p-10 text-left text-gray-500">
+        <div className="rounded-xl border border-gray-200 bg-white p-10 text-left">
           <CoWorkingCatalog CoJson={CoWorkings} />
         </div>
       </section>
