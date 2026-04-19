@@ -1,6 +1,7 @@
 export default async function createComment(
     spaceId: string,
     message: string,
+    rating: number | null,
     token: string
 ) {
     const response = await fetch(
@@ -11,7 +12,7 @@ export default async function createComment(
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ message }),
+            body: JSON.stringify({ message, rating }),
         }
     );
 

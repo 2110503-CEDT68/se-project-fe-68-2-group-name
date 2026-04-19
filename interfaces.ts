@@ -12,6 +12,7 @@ export interface CoworkingSpace {
 export interface CommentItem {
     _id: string;
     message: string;
+    rating?: number;
     coworkingSpace: string;
     user: {
         _id: string;

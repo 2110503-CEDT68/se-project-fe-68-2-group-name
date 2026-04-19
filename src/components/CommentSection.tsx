@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import createComment from "@/libs/createComment";
 import updateComment from "@/libs/updateComment";
 import deleteComment from "@/libs/deleteComment";
+import reportComment from "@/libs/reportComment"; // นำเข้า reportComment
 import getUserProfile from "@/libs/getUserProfile";
 import { CommentItem } from "../../interfaces";
 import getCommentsByCoworking from "@/libs/getCommentsByCoworking";
+import { Rating } from "@mui/material";
 
 export default function CommentSection({
     spaceId,
@@ -20,6 +22,7 @@ export default function CommentSection({
 
     const [comments, setComments] = useState<CommentItem[]>([]);
     const [message, setMessage] = useState("");
+    const [rating, setRating] = useState<number | null>(0);
     const [loading, setLoading] = useState(true);
     const [posting, setPosting] = useState(false);
     const [visibleCount, setVisibleCount] = useState(5);
@@ -29,8 +32,12 @@ export default function CommentSection({
 
     const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
     const [editedMessage, setEditedMessage] = useState("");
+    const [editedRating, setEditedRating] = useState<number | null>(0);
     const [savingEdit, setSavingEdit] = useState(false);
     const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+    
+    // State สำหรับการรีพอร์ต
+    const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
 
     async function fetchComments() {
         try {
@@ -86,8 +93,9 @@ export default function CommentSection({
 
         try {
             setPosting(true);
-            await createComment(spaceId, message, token);
+            await createComment(spaceId, message, rating, token);
             setMessage("");
+            setRating(0);
             await fetchComments();
         } catch (error) {
             console.error(error);
@@ -100,11 +108,13 @@ export default function CommentSection({
     const handleStartEdit = (comment: CommentItem) => {
         setEditingCommentId(comment._id);
         setEditedMessage(comment.message);
+        setEditedRating((comment as any).rating || 0);
     };
 
     const handleCancelEdit = () => {
         setEditingCommentId(null);
         setEditedMessage("");
+        setEditedRating(0);
     };
 
     const handleSaveEdit = async (commentId: string) => {
@@ -121,9 +131,10 @@ export default function CommentSection({
 
         try {
             setSavingEdit(true);
-            await updateComment(commentId, { message: editedMessage }, token);
+            await updateComment(commentId, { message: editedMessage, rating: editedRating }, token);
             setEditingCommentId(null);
             setEditedMessage("");
+            setEditedRating(0);
             await fetchComments();
         } catch (error) {
             console.error(error);
@@ -155,6 +166,30 @@ export default function CommentSection({
         }
     };
 
+    // ฟังก์ชันจัดการการรีพอร์ต
+    const handleReport = async (commentId: string) => {
+        if (!token) {
+            alert("Please sign in first.");
+            router.push("/login");
+            return;
+        }
+
+        const confirmed = window.confirm("Are you sure you want to report this comment?");
+        if (!confirmed) return;
+
+        try {
+            setReportingCommentId(commentId);
+            await reportComment(commentId, token);
+            alert("Comment reported successfully.");
+            await fetchComments();
+        } catch (error) {
+            console.error(error);
+            alert("Failed to report comment. You might have already reported it.");
+        } finally {
+            setReportingCommentId(null);
+        }
+    };
+
     return (
         <div className="mt-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <h2 className="text-sm font-semibold text-gray-700">Comments</h2>
@@ -163,6 +198,16 @@ export default function CommentSection({
             </p>
 
             <div className="mt-4">
+                <div className="mb-3 flex items-center gap-2">
+                    <span className="text-sm text-gray-700 font-medium">Your Rating:</span>
+                    <Rating
+                        name="workspace-rating"
+                        value={rating}
+                        onChange={(event, newValue) => {
+                            setRating(newValue);
+                        }}
+                    />
+                </div>
                 <textarea
                     rows={4}
                     value={message}
@@ -183,7 +228,7 @@ export default function CommentSection({
                 {loading ? (
                     <p className="text-sm text-gray-500">Loading comments...</p>
                 ) : comments.length === 0 ? (
-                    <p className="text-sm text-gray-500">No comments yet.</p>
+                    <p className="text-sm text-gray-500 mx-1">No comments yet.</p>
                 ) : (
                     <>
                         {comments.slice(0, visibleCount).map((comment) => {
@@ -197,13 +242,17 @@ export default function CommentSection({
                             const canEdit = isOwner;
                             const canDelete = isOwner || isAdmin;
                             const isEditing = editingCommentId === comment._id;
+                            
+                            // ดึงข้อมูล Report จาก backend
+                            const reportStatus = (comment as any).reportStatus;
+                            const reportCount = (comment as any).reportCount || 0;
 
                             return (
                                 <div
                                     key={comment._id}
                                     className="rounded-xl border border-gray-100 bg-gray-50 p-4"
                                 >
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify-between !my-2">
                                         <p className="text-sm font-semibold text-gray-800">
                                             {typeof comment.user === "string"
                                                 ? "User"
@@ -216,6 +265,16 @@ export default function CommentSection({
 
                                     {isEditing ? (
                                         <div className="mt-3">
+                                            <div className="mb-3 flex items-center gap-2">
+                                                <span className="text-sm text-gray-700 font-medium">Edit Rating:</span>
+                                                <Rating
+                                                    name="edit-workspace-rating"
+                                                    value={editedRating}
+                                                    onChange={(event, newValue) => {
+                                                        setEditedRating(newValue);
+                                                    }}
+                                                />
+                                            </div>
                                             <textarea
                                                 rows={3}
                                                 value={editedMessage}
@@ -240,35 +299,67 @@ export default function CommentSection({
                                             </div>
                                         </div>
                                     ) : (
-                                        <p className="mt-2 text-sm text-gray-600">
-                                            {comment.message}
-                                        </p>
-                                    )}
-
-                                    {(canEdit || canDelete) && !isEditing && (
-                                        <div className="mt-3 flex gap-2">
-                                            {canEdit && (
-                                                <button
-                                                    onClick={() => handleStartEdit(comment)}
-                                                    className="rounded-xl border border-blue-300 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50"
-                                                >
-                                                    Edit
-                                                </button>
-                                            )}
-
-                                            {canDelete && (
-                                                <button
-                                                    onClick={() => handleDelete(comment._id)}
-                                                    disabled={deletingCommentId === comment._id}
-                                                    className="rounded-xl border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-                                                >
-                                                    {deletingCommentId === comment._id
-                                                        ? "Deleting..."
-                                                        : "Delete"}
-                                                </button>
-                                            )}
+                                        <div>
+                                            <Rating 
+                                                value={(comment as any).rating || 0} 
+                                                readOnly 
+                                                size="small" 
+                                            />
+                                            <p className="mt-2 text-sm text-gray-600 mx-1 break-words">
+                                                {comment.message}
+                                            </p>
                                         </div>
                                     )}
+
+                                    {/* พื้นที่จัดการ Action (Report, Edit, Delete) */}
+                                    <div className="mt-3 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            {/* ปุ่ม Report สำหรับผู้ใช้ทั่วไป (ไม่ใช่เจ้าของคอมเมนต์และไม่ใช่แอดมิน) */}
+                                            {!isOwner && !isAdmin && !isEditing && (
+                                                <button
+                                                    onClick={() => handleReport(comment._id)}
+                                                    disabled={reportingCommentId === comment._id}
+                                                    className="rounded-xl border border-yellow-600 px-3 py-1.5 text-sm font-medium text-yellow-600 hover:bg-yellow-50"
+                                                >
+                                                    {reportingCommentId === comment._id ? "Reporting..." : "Report"}
+                                                </button>
+                                            )}
+
+                                            {/* แสดงสถานะ Report สำหรับ Admin */}
+                                            {isAdmin && reportStatus === "reported" && (
+                                                <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-600 border border-red-200">
+                                                    ⚠️ Reported by {reportCount} user(s)
+                                                </span>
+                                            )}
+
+                                            {/* ปุ่ม Edit และ Delete */}
+                                            {(canEdit || canDelete) && !isEditing && (
+                                                <div className="flex items-center gap-2">
+                                                    {canEdit && (
+                                                        <button
+                                                            onClick={() => handleStartEdit(comment)}
+                                                            className="rounded-xl border border-blue-300 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                    )}
+
+                                                    {canDelete && (
+                                                        <button
+                                                            onClick={() => handleDelete(comment._id)}
+                                                            disabled={deletingCommentId === comment._id}
+                                                            className="rounded-xl border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                                                        >
+                                                            {deletingCommentId === comment._id
+                                                                ? "Deleting..."
+                                                                : "Delete"}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                    </div>
                                 </div>
                             );
                         })}

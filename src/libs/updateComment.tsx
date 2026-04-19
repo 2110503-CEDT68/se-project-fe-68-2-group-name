@@ -1,8 +1,6 @@
 export default async function updateComment(
     id: string,
-    data: {
-        message: string;
-    },
+    data: { message: string; rating?: number | null },
     token: string
 ) {
     const response = await fetch(

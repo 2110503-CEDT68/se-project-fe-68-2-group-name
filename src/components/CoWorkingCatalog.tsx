@@ -75,6 +75,8 @@ export default function CoWorkingCatalog({ CoJson }: { CoJson: any }) {
               imgSrc={CoItem.imageUrl}
               coDesc={CoItem.description}
               coPrice={CoItem.price}
+              averageRating={CoItem.averageRating} 
+              ratingsQuantity={CoItem.ratingsQuantity}
             />
           </Link>
         ))}
