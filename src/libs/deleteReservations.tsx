@@ -1,6 +1,7 @@
+import { API_BASE } from "./config";
 export default async function deleteReservation(id: string, token: string) {
   const res = await fetch(
-    `https://swdevprac-project-backend.vercel.app/api/v1/reservations/${id}`,
+    `${API_BASE}/reservations/${id}`,
     {
       method: "DELETE",
       headers: {

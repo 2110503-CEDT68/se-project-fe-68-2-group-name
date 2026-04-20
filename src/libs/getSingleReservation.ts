@@ -1,5 +1,6 @@
+import { API_BASE } from "./config";
 export default async function getSingleReservation(resId: string, token: string) {
-    const response = await fetch(`https://swdevprac-project-backend.vercel.app/api/v1/reservations/${resId}`, {
+    const response = await fetch(`${API_BASE}/reservations/${resId}`, {
         method: "GET",
         headers: {
             "Authorization": `Bearer ${token}`,

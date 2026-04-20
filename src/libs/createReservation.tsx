@@ -1,3 +1,4 @@
+import { API_BASE } from "./config";
 export default async function createReservation(
     spaceId: string, 
     resvDate: string, 
@@ -5,7 +6,7 @@ export default async function createReservation(
     totalCost: number,    // เพิ่มรับค่า totalCost
     token: string
 ) {
-    const response = await fetch(`https://swdevprac-project-backend.vercel.app/api/v1/coworkingspaces/${spaceId}/reservations/`, {
+    const response = await fetch(`${API_BASE}/coworkingspaces/${spaceId}/reservations/`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

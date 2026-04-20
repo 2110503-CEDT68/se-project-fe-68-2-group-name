@@ -1,6 +1,7 @@
+import { API_BASE } from "./config";
 // libs/reportComment.ts
 export default async function reportComment(commentId: string, token: string) {
-    const response = await fetch(`https://swdevprac-project-backend.vercel.app/api/v1/comments/${commentId}/report`, {
+    const response = await fetch(`${API_BASE}/comments/${commentId}/report`, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",

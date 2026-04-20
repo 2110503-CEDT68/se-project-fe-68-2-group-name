@@ -1,8 +1,9 @@
+import { API_BASE } from "./config";
 // src/libs/getAllComments.tsx
 export default async function getAllComments() {
     // Step 1: fetch all coworking spaces
     const spacesRes = await fetch(
-        "https://swdevprac-project-backend.vercel.app/api/v1/coworkingspaces",
+        `${API_BASE}/coworkingspaces`,
         { cache: "no-store" }
     );
 
@@ -17,7 +18,7 @@ export default async function getAllComments() {
     const commentResults = await Promise.allSettled(
         spaces.map(async (space) => {
             const commentsRes = await fetch(
-                `https://swdevprac-project-backend.vercel.app/api/v1/coworkingspaces/${space._id}/comments`,
+                `${API_BASE}/coworkingspaces/${space._id}/comments`,
                 { cache: "no-store" }
             );
 

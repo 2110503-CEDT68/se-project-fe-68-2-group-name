@@ -1,6 +1,7 @@
+import { API_BASE } from "./config";
 export default async function userRegister(fullName:string, email:string, telephone:string, usePassword:string) {
     
-    const response = await fetch("https://swdevprac-project-backend.vercel.app/api/v1/auth/register", {
+    const response = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

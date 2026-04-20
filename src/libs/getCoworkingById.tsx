@@ -1,6 +1,7 @@
+import { API_BASE } from "./config";
 export default async function getCoworkingById(id: string) {
     const response = await fetch(
-        `https://swdevprac-project-backend.vercel.app/api/v1/coworkingspaces/${id}`,
+        `${API_BASE}/coworkingspaces/${id}`,
         {
             cache: "no-store",
         }

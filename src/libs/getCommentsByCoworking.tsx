@@ -1,6 +1,7 @@
+import { API_BASE } from "./config";
 export default async function getCommentsByCoworking(id: string) {
     const response = await fetch(
-        `https://swdevprac-project-backend.vercel.app/api/v1/coworkingspaces/${id}/comments`,
+        `${API_BASE}/coworkingspaces/${id}/comments`,
         {
             cache: "no-store",
         }

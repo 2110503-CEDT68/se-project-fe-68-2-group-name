@@ -18,7 +18,8 @@ export default async function createComment(
     );
 
     if (!response.ok) {
-        throw new Error("Failed to create comment");
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || "Failed to create comment");
     }
 
     return await response.json();

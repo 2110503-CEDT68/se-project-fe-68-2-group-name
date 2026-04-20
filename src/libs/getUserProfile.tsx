@@ -1,5 +1,6 @@
+import { API_BASE } from "./config";
 export default async function getUserProfile(token : string) {
-    const response = await fetch("https://swdevprac-project-backend.vercel.app/api/v1/auth/me", {
+    const response = await fetch(`${API_BASE}/auth/me`, {
         method: "GET",
         headers: {
             authorization: `Bearer ${token}`,

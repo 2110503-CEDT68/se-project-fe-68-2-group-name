@@ -97,9 +97,14 @@ export default function CommentSection({
             setMessage("");
             setRating(0);
             await fetchComments();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert("Failed to post comment.");
+            const msg = error?.message || "";
+            if (msg.toLowerCase().includes("blocked")) {
+                alert("Your account has been blocked by an admin. You cannot post comments.");
+            } else {
+                alert("Failed to post comment.");
+            }
         } finally {
             setPosting(false);
         }

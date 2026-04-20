@@ -1,9 +1,11 @@
-// src/components/AdminCommentsClient.tsx
 "use client";
+import { API_BASE } from "@/libs/config";
+// src/components/AdminCommentsClient.tsx
 
 import { useEffect, useState } from "react";
 import getAllComments from "@/libs/getAllComments";
 import deleteComment from "@/libs/deleteComment";
+import { blockUser, unblockUser } from "@/libs/blockUser";
 import { Rating } from "@mui/material";
 
 type Comment = {
@@ -15,7 +17,7 @@ type Comment = {
     createdAt: string;
     reportStatus?: string;
     reportCount?: number;
-    user: { _id: string; name?: string; email?: string } | string;
+    user: { _id: string; name?: string; email?: string; isBlocked?: boolean } | string;
 };
 
 type FilterType = "all" | "reported";
@@ -25,18 +27,16 @@ type SortOrderType = "asc" | "desc";
 export default function AdminCommentsClient({ token }: { token: string }) {
     const [comments, setComments] = useState<Comment[]>([]);
     const [loading, setLoading] = useState(true);
-    
-    // Filtering & Searching State
+
     const [filter, setFilter] = useState<FilterType>("reported");
     const [searchTerm, setSearchTerm] = useState("");
-    
-    // Sorting State
+
     const [sortBy, setSortBy] = useState<SortByType>("date");
     const [sortOrder, setSortOrder] = useState<SortOrderType>("desc");
 
-    // Action State
     const [hidingId, setHidingId] = useState<string | null>(null);
     const [dismissingId, setDismissingId] = useState<string | null>(null);
+    const [blockingId, setBlockingId] = useState<string | null>(null);
 
     const loadComments = async () => {
         try {
@@ -54,18 +54,13 @@ export default function AdminCommentsClient({ token }: { token: string }) {
         loadComments();
     }, []);
 
-    // Hide = permanently delete the comment
     const handleHide = async (comment: Comment) => {
         const userName =
             typeof comment.user === "string"
                 ? "this user"
                 : comment.user?.name || comment.user?.email || "this user";
 
-        if (
-            !confirm(
-                `Delete comment by ${userName}? This action cannot be undone.`
-            )
-        )
+        if (!confirm(`Delete comment by ${userName}? This action cannot be undone.`))
             return;
 
         try {
@@ -80,7 +75,6 @@ export default function AdminCommentsClient({ token }: { token: string }) {
         }
     };
 
-    // Dismiss = mark report as reviewed
     const handleDismiss = async (comment: Comment) => {
         if (!confirm("Dismiss this report? The comment will remain visible."))
             return;
@@ -89,7 +83,7 @@ export default function AdminCommentsClient({ token }: { token: string }) {
             setDismissingId(comment._id);
 
             const response = await fetch(
-                `https://swdevprac-project-backend.vercel.app/api/v1/comments/${comment._id}`,
+                `${API_BASE}/comments/${comment._id}`,
                 {
                     method: "PUT",
                     headers: {
@@ -122,12 +116,51 @@ export default function AdminCommentsClient({ token }: { token: string }) {
         }
     };
 
+    const handleBlockToggle = async (comment: Comment) => {
+        if (typeof comment.user === "string") return;
+        const userId = comment.user._id;
+        const userName = comment.user.name || comment.user.email || "this user";
+        const isCurrentlyBlocked = comment.user.isBlocked;
+
+        const action = isCurrentlyBlocked ? "unblock" : "block";
+        if (
+            !confirm(
+                `Are you sure you want to ${action} ${userName}? ${
+                    isCurrentlyBlocked
+                        ? "They will be able to post comments again."
+                        : "They will no longer be able to post comments."
+                }`
+            )
+        )
+            return;
+
+        try {
+            setBlockingId(comment._id);
+            if (isCurrentlyBlocked) {
+                await unblockUser(userId, token);
+            } else {
+                await blockUser(userId, token);
+            }
+            setComments((prev) =>
+                prev.map((c) => {
+                    if (c._id !== comment._id || typeof c.user === "string") return c;
+                    return { ...c, user: { ...c.user, isBlocked: !isCurrentlyBlocked } };
+                })
+            );
+        } catch (err) {
+            console.error(err);
+            alert(`Failed to ${action} user.`);
+        } finally {
+            setBlockingId(null);
+        }
+    };
+
     const handleSort = (type: SortByType) => {
         if (sortBy === type) {
             setSortOrder(sortOrder === "asc" ? "desc" : "asc");
         } else {
             setSortBy(type);
-            setSortOrder("desc"); // Default to desc (newest/most reported first) when switching types
+            setSortOrder("desc");
         }
     };
 
@@ -159,19 +192,14 @@ export default function AdminCommentsClient({ token }: { token: string }) {
             return sortOrder === "asc" ? comparison : -comparison;
         });
 
-    const reportedCount = comments.filter(
-        (c) => c.reportStatus === "reported"
-    ).length;
+    const reportedCount = comments.filter((c) => c.reportStatus === "reported").length;
 
     return (
         <main className="min-h-screen bg-[#f5f7fb] px-6 py-10">
             <div className="mx-auto max-w-6xl">
-                {/* Header */}
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">
-                            Manage Comments
-                        </h1>
+                        <h1 className="text-3xl font-bold text-gray-900">Manage Comments</h1>
                         <p className="mt-2 text-sm text-gray-500">
                             Review reported comments and moderate content
                         </p>
@@ -181,20 +209,15 @@ export default function AdminCommentsClient({ token }: { token: string }) {
                         <div className="inline-flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-2.5">
                             <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
                             <span className="text-sm font-semibold text-red-700">
-                                {reportedCount} reported comment
-                                {reportedCount !== 1 ? "s" : ""}
+                                {reportedCount} reported comment{reportedCount !== 1 ? "s" : ""}
                             </span>
                         </div>
                     )}
                 </div>
 
-                {/* Table Card */}
                 <div className="mt-8 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                    {/* Toolbar */}
                     <div className="flex flex-col gap-4 border-b border-gray-100 px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
-                        
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                            {/* Filter tabs */}
                             <div className="flex shrink-0 gap-1 rounded-xl bg-gray-100 p-1">
                                 <button
                                     onClick={() => setFilter("reported")}
@@ -225,7 +248,6 @@ export default function AdminCommentsClient({ token }: { token: string }) {
 
                             <div className="hidden h-6 w-px bg-gray-200 sm:block" />
 
-                            {/* Sort Buttons */}
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => handleSort("date")}
@@ -237,9 +259,7 @@ export default function AdminCommentsClient({ token }: { token: string }) {
                                 >
                                     Date
                                     {sortBy === "date" && (
-                                        <span className="text-xs">
-                                            {sortOrder === "asc" ? "↑" : "↓"}
-                                        </span>
+                                        <span className="text-xs">{sortOrder === "asc" ? "↑" : "↓"}</span>
                                     )}
                                 </button>
                                 <button
@@ -252,15 +272,12 @@ export default function AdminCommentsClient({ token }: { token: string }) {
                                 >
                                     Reports
                                     {sortBy === "reports" && (
-                                        <span className="text-xs">
-                                            {sortOrder === "asc" ? "↑" : "↓"}
-                                        </span>
+                                        <span className="text-xs">{sortOrder === "asc" ? "↑" : "↓"}</span>
                                     )}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Search */}
                         <input
                             type="text"
                             placeholder="Search by user, space, or content..."
@@ -270,54 +287,33 @@ export default function AdminCommentsClient({ token }: { token: string }) {
                         />
                     </div>
 
-                    {/* Table */}
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-left">
                             <thead className="bg-gray-50 text-sm text-gray-500">
                                 <tr>
-                                    <th className="px-5 py-4 font-medium">
-                                        User
-                                    </th>
-                                    <th className="px-5 py-4 font-medium">
-                                        Space
-                                    </th>
-                                    <th className="px-5 py-4 font-medium">
-                                        Comment
-                                    </th>
-                                    <th className="px-5 py-4 font-medium">
-                                        Status
-                                    </th>
-                                    <th className="px-5 py-4 font-medium text-right">
-                                        Actions
-                                    </th>
+                                    <th className="px-5 py-4 font-medium">User</th>
+                                    <th className="px-5 py-4 font-medium">Space</th>
+                                    <th className="px-5 py-4 font-medium">Comment</th>
+                                    <th className="px-5 py-4 font-medium">Status</th>
+                                    <th className="px-5 py-4 font-medium text-right">Actions</th>
                                 </tr>
                             </thead>
 
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td
-                                            colSpan={5}
-                                            className="px-5 py-16 text-center text-gray-400"
-                                        >
+                                        <td colSpan={5} className="px-5 py-16 text-center text-gray-400">
                                             <div className="flex flex-col items-center gap-2">
                                                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-                                                <span className="text-sm">
-                                                    Loading comments...
-                                                </span>
+                                                <span className="text-sm">Loading comments...</span>
                                             </div>
                                         </td>
                                     </tr>
                                 ) : displayedComments.length === 0 ? (
                                     <tr>
-                                        <td
-                                            colSpan={5}
-                                            className="px-5 py-16 text-center"
-                                        >
+                                        <td colSpan={5} className="px-5 py-16 text-center">
                                             <div className="flex flex-col items-center gap-2 text-gray-400">
-                                                <span className="text-3xl">
-                                                    ✅
-                                                </span>
+                                                <span className="text-3xl">✅</span>
                                                 <p className="text-sm font-medium">
                                                     {filter === "reported"
                                                         ? "No reported comments — all clear!"
@@ -335,41 +331,41 @@ export default function AdminCommentsClient({ token }: { token: string }) {
                                                   comment.user?.email ||
                                                   "Unknown User";
 
-                                        const isReported =
-                                            comment.reportStatus === "reported";
+                                        const isReported = comment.reportStatus === "reported";
+                                        const isUserBlocked =
+                                            typeof comment.user !== "string" &&
+                                            comment.user?.isBlocked === true;
 
                                         return (
                                             <tr
                                                 key={comment._id}
                                                 className={`border-t border-gray-100 text-sm transition-colors hover:bg-gray-50/50 ${
-                                                    isReported
-                                                        ? "bg-red-50/30"
-                                                        : ""
+                                                    isReported ? "bg-red-50/30" : ""
                                                 }`}
                                             >
                                                 {/* User */}
                                                 <td className="px-5 py-4 align-top">
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-medium text-blue-600">
-                                                            {userName
-                                                                .charAt(0)
-                                                                .toUpperCase()}
+                                                            {userName.charAt(0).toUpperCase()}
                                                         </div>
                                                         <div>
-                                                            <p className="font-medium text-gray-900">
-                                                                {userName}
-                                                            </p>
-                                                            <p className="text-xs text-gray-400">
-                                                                {new Date(
-                                                                    comment.createdAt
-                                                                ).toLocaleDateString(
-                                                                    "en-US",
-                                                                    {
-                                                                        month: "short",
-                                                                        day: "numeric",
-                                                                        year: "numeric",
-                                                                    }
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <p className="font-medium text-gray-900">
+                                                                    {userName}
+                                                                </p>
+                                                                {isUserBlocked && (
+                                                                    <span className="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                                                                        🚫 Blocked
+                                                                    </span>
                                                                 )}
+                                                            </div>
+                                                            <p className="text-xs text-gray-400">
+                                                                {new Date(comment.createdAt).toLocaleDateString("en-US", {
+                                                                    month: "short",
+                                                                    day: "numeric",
+                                                                    year: "numeric",
+                                                                })}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -382,15 +378,9 @@ export default function AdminCommentsClient({ token }: { token: string }) {
                                                     </p>
                                                 </td>
 
-                                                {/* Comment content */}
+                                                {/* Comment */}
                                                 <td className="max-w-xs px-5 py-4 align-top">
-                                                    <Rating
-                                                        value={
-                                                            comment.rating || 0
-                                                        }
-                                                        readOnly
-                                                        size="small"
-                                                    />
+                                                    <Rating value={comment.rating || 0} readOnly size="small" />
                                                     <p className="mt-1 text-gray-600 line-clamp-3">
                                                         {comment.message}
                                                     </p>
@@ -403,17 +393,10 @@ export default function AdminCommentsClient({ token }: { token: string }) {
                                                             <span className="inline-flex w-max items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
                                                                 ⚠️ Reported
                                                             </span>
-                                                            {(comment.reportCount ||
-                                                                0) > 0 && (
+                                                            {(comment.reportCount || 0) > 0 && (
                                                                 <span className="text-xs text-gray-400">
-                                                                    {
-                                                                        comment.reportCount
-                                                                    }{" "}
-                                                                    report
-                                                                    {comment.reportCount !==
-                                                                    1
-                                                                        ? "s"
-                                                                        : ""}
+                                                                    {comment.reportCount} report
+                                                                    {comment.reportCount !== 1 ? "s" : ""}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -427,21 +410,37 @@ export default function AdminCommentsClient({ token }: { token: string }) {
                                                 {/* Actions */}
                                                 <td className="px-5 py-4 align-top">
                                                     <div className="flex flex-col items-end gap-2">
-                                                        {/* Hide (delete) — always available */}
+                                                        {/* Block / Unblock */}
+                                                        {typeof comment.user !== "string" && (
+                                                            <button
+                                                                onClick={() => handleBlockToggle(comment)}
+                                                                disabled={blockingId === comment._id}
+                                                                className={`inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                                                                    isUserBlocked
+                                                                        ? "bg-gray-500 hover:bg-gray-600"
+                                                                        : "bg-orange-500 hover:bg-orange-600"
+                                                                }`}
+                                                            >
+                                                                {blockingId === comment._id ? (
+                                                                    <>
+                                                                        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                                        {isUserBlocked ? "Unblocking..." : "Blocking..."}
+                                                                    </>
+                                                                ) : isUserBlocked ? (
+                                                                    "Unblock User"
+                                                                ) : (
+                                                                    "Block User"
+                                                                )}
+                                                            </button>
+                                                        )}
+
+                                                        {/* Delete comment */}
                                                         <button
-                                                            onClick={() =>
-                                                                handleHide(
-                                                                    comment
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                hidingId ===
-                                                                comment._id
-                                                            }
+                                                            onClick={() => handleHide(comment)}
+                                                            disabled={hidingId === comment._id}
                                                             className="inline-flex items-center gap-1.5 rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                                                         >
-                                                            {hidingId ===
-                                                            comment._id ? (
+                                                            {hidingId === comment._id ? (
                                                                 <>
                                                                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                                                                     Deleting...
@@ -460,7 +459,6 @@ export default function AdminCommentsClient({ token }: { token: string }) {
                         </table>
                     </div>
 
-                    {/* Footer count */}
                     {!loading && displayedComments.length > 0 && (
                         <div className="border-t border-gray-100 px-5 py-3 text-xs text-gray-400">
                             Showing {displayedComments.length} comment

@@ -1,3 +1,4 @@
+import { API_BASE } from "./config";
 export default async function updateCoworking(
     id: string,
     data: {
@@ -12,7 +13,7 @@ export default async function updateCoworking(
     token: string
 ) {
     const response = await fetch(
-        `https://swdevprac-project-backend.vercel.app/api/v1/coworkingspaces/${id}`,
+        `${API_BASE}/coworkingspaces/${id}`,
         {
             method: "PUT",
             headers: {

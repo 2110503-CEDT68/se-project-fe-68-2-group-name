@@ -1,3 +1,4 @@
+import { API_BASE } from "./config";
 export default async function updateReservation(
     resId: string, 
     resvDate: string, 
@@ -5,7 +6,7 @@ export default async function updateReservation(
     totalCost: number, 
     token: string
 ) {
-    const response = await fetch(`https://swdevprac-project-backend.vercel.app/api/v1/reservations/${resId}`, {
+    const response = await fetch(`${API_BASE}/reservations/${resId}`, {
         method: "PUT", 
         headers: {
             "Content-Type": "application/json",

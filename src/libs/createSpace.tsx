@@ -1,3 +1,4 @@
+import { API_BASE } from "./config";
 export default async function createCoworkingSpace(
   name: string,
   address: string,
@@ -9,7 +10,7 @@ export default async function createCoworkingSpace(
   token: string
 ) {
   const response = await fetch(
-    "https://swdevprac-project-backend.vercel.app/api/v1/coworkingspaces",
+    `${API_BASE}/coworkingspaces`,
     {
       method: "POST",
       headers: {
