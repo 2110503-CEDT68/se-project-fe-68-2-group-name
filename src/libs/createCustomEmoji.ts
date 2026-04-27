@@ -14,7 +14,8 @@ export default async function createCustomEmoji(name: string, file: File, token:
     });
 
     if (!response.ok) {
-        throw new Error("Failed to create custom emoji");
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || "Failed to create custom emoji");
     }
 
     return await response.json();

@@ -121,6 +121,14 @@ export default function CommentSection({
             alert("Please enter a comment.");
             return;
         }
+        if (message.length > 500) {
+            alert("Comment is too long");
+            return;
+        }
+        if (!rating || rating === 0) {
+            alert("Please rate this coworking space");
+            return;
+        }
         try {
             setPosting(true);
             await createComment(spaceId, message, rating, token);
@@ -130,8 +138,8 @@ export default function CommentSection({
         } catch (error: any) {
             console.error(error);
             const msg = error?.message || "";
-            if (msg.toLowerCase().includes("blocked")) {
-                alert("Your account has been blocked by an admin. You cannot post comments.");
+            if (msg.toLowerCase().includes("blocked") || msg.toLowerCase().includes("forbidden")) {
+                alert("You are forbidded from commenting");
             } else {
                 alert("Failed to post comment.");
             }
@@ -277,6 +285,15 @@ export default function CommentSection({
     const handleCreateCustomEmoji = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newEmojiName.trim() || !newEmojiFile || !token) return;
+
+        if (!newEmojiFile.type.startsWith("image/")) {
+            alert("Only image files are allowed");
+            return;
+        }
+        if (newEmojiFile.size > 2 * 1024 * 1024) {
+            alert("File size is too large");
+            return;
+        }
 
         try {
             setUploadingEmoji(true);
