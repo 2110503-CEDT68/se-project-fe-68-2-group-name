@@ -597,7 +597,7 @@ export default function CommentSection({
                                 />
                             </div>
                             <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Image File</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Image File (max 2 MB)</label>
                                 <input
                                     type="file"
                                     required
