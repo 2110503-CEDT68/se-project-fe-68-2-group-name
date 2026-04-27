@@ -92,6 +92,13 @@ export default async function TopMenu() {
                                     <span className="text-base">💬</span>
                                     Reported Comments
                                 </Link>
+                                <Link
+                                    href="/admin/emojis"
+                                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                                >
+                                    <span className="text-base">😒</span>
+                                    Custom Emojis
+                                </Link>
                             </div>
                         </div>
                     )}
