@@ -1,1 +1,1 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "${API_BASE}/api/v1";
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://swdevprac-project-backend.vercel.app/api/v1";

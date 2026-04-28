@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import userRegister from "@/libs/userRegister";
+import LegalModal from "@/components/LegalModal";
 
 export default function RegisterPage() {
 
@@ -13,6 +14,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [errorText, setErrorText] = useState("");
+  const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
 
   async function handleSubmit() {
     try {
@@ -130,9 +132,23 @@ export default function RegisterPage() {
               className="mt-1"
             />
             <p className="text-xs text-gray-500">
-              I agree to the <span className="text-blue-500">Terms of Service</span>
+              I agree to the{" "}
+              <button
+                type="button"
+                onClick={() => setLegalModal("terms")}
+                className="font-medium text-blue-500 hover:underline"
+              >
+                Terms of Service
+              </button>
               <br />
-              and <span className="text-blue-500">Privacy Policy</span>
+              and{" "}
+              <button
+                type="button"
+                onClick={() => setLegalModal("privacy")}
+                className="font-medium text-blue-500 hover:underline"
+              >
+                Privacy Policy
+              </button>
             </p>
           </div>
 
@@ -157,11 +173,15 @@ export default function RegisterPage() {
             </Link>
           </div>
         </div>
-
+ 
         <p className="mt-6 text-center text-xs text-gray-400">
           By creating an account, you agree to our terms and conditions
         </p>
       </div>
+      <LegalModal
+        type={legalModal}
+        onClose={() => setLegalModal(null)}
+      />
     </main>
   );
 }

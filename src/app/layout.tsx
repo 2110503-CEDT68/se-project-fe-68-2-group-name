@@ -4,7 +4,7 @@ import "./globals.css";
 import TopMenu from "@/components/TopMenu";
 import NextAuthProvider from "@/providers/NextAuthProvider";
 import { getServerSession } from "next-auth";
-import { authOptions } from "./api/auth/[...nextauth]/authOptions";
+import { authOptions } from "@/app/api/auth/[...nextauth]/authOptions";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,19 +26,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
-  const nextAuthSession = getServerSession(authOptions);
+  const nextAuthSession = await getServerSession(authOptions);
 
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NextAuthProvider session={nextAuthSession}>
-          <TopMenu></TopMenu>
-          <main className="pt-16">
-            {children}
-          </main>
+          <TopMenu />
+          <main className="pt-16">{children}</main>
         </NextAuthProvider>
       </body>
     </html>

@@ -4,30 +4,35 @@ export default defineConfig({
   testDir: './tests',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0, // 1 retry locally too — helps with flaky login timing
+  retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: 'html',
-  // globalSetup: './global-setup.ts',
+
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: 15_000,    // per-action timeout (clicks, fills, etc.)
-    navigationTimeout: 20_000, // page.goto / waitForURL timeout
-  },
-  expect: {
-    timeout: 10_000,   // add this at the top level, not inside `use`
+    actionTimeout: 15_000,
+    navigationTimeout: 20_000,
   },
 
-  // Auto-start your dev server if it's not already running
-  webServer:
-    {
-      command: 'npm run dev',
-      url: 'http://localhost:3000',
-      reuseExistingServer: true,
-      timeout: 60_000,
-    },
+  expect: {
+    timeout: 10_000,
+  },
+
+  webServer: {
+  command: 'npm run dev',
+  url: 'http://localhost:3000',
+  reuseExistingServer: false,
+  timeout: 60_000,
+  env: {
+    NEXT_PUBLIC_API_URL:
+      'https://swdevprac-project-backend.vercel.app/api/v1',
+    NEXTAUTH_URL: 'http://localhost:3000',
+    NEXTAUTH_SECRET: 'mysecret',
+  },
+},
 
   projects: [
     {

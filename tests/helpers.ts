@@ -23,7 +23,8 @@ export const ADMIN = {
 export const SPACE_ID = process.env.TEST_SPACE_ID || '69c170bc3d0e13729e874c59';
 
 // Backend base URL
-export const API_BASE = process.env.API_BASE || 'https://swdevprac-project-backend.vercel.app/';
+export const API_BASE =
+  process.env.API_BASE || 'https://swdevprac-project-backend.vercel.app';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Auth helpers

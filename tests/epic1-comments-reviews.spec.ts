@@ -350,8 +350,11 @@ test('admin can delete a comment from the admin dashboard', async ({ page }) => 
 });
 
   test('non-admin cannot access the admin comments page', async ({ page }) => {
-    await loginViaUI(page, MEMBER.email, MEMBER.password);
+    await loginViaUI(page, MEMBER2.email, MEMBER2.password);
     await page.goto('/admin/comments');
-    await page.waitForURL((url) => !url.pathname.startsWith('/admin'), { timeout: 8_000 });
+
+    await page.waitForURL((url) => !url.pathname.startsWith('/admin'), {
+      timeout: 8_000,
+    });
   });
 });
